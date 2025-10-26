@@ -1,0 +1,18 @@
+/* src/components/WavePanel.css */
+.wave-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wave-header {
+    color: var(--muted, #a896d9);
+    margin-bottom: 4px;
+}
+
+.wave-canvas {
+    width: 100%;
+    height: 140px;
+    border-radius: 12px;
+    background: linear-gradient( 90deg, rgba(164,108,255,.18), rgba(255,132,77,.22), rgba(164,108,255,.18) );
+}
