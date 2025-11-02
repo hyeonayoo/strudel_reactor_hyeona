@@ -1,0 +1,54 @@
+.vf-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    user-select: none
+}
+
+.vf-label {
+    color: var(--muted);
+    font-size: .85rem;
+    letter-spacing: .06em
+}
+
+.vf-rail {
+    position: relative;
+    width: 56px;
+    height: 200px;
+    border-radius: 16px;
+    background: transparent;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    touch-action: none;
+    padding: 10px 22px;
+}
+
+.vf-groove {
+    position: absolute;
+    left: 50%;
+    top: 10px;
+    bottom: 10px;
+    width: 12px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: linear-gradient(180deg,var(--accent) 0%, var(--accent-2) 100%);
+    box-shadow: inset 0 1px 6px rgba(255,255,255,.20), inset 0 -4px 10px rgba(0,0,0,.55);
+}
+
+.vf-thumb {
+    position: absolute;
+    left: 50%;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 0 14px rgba(164,108,255,.45),0 6px 16px rgba(0,0,0,.35),inset 0 1px 4px rgba(0,0,0,.15);
+    transform: translateX(-50%); /* remove translateY; we place with top(px) */
+}
+
+
+.vf-value {
+    color: var(--muted);
+    font-size: .8rem
+}

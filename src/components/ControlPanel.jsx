@@ -1,5 +1,5 @@
 import React from "react";
-import Dial from "./Dial.jsx";
+import VolumeFader from "./VolumeFader.jsx";
 import "./ControlPanel.css";
 
 export default function ControlPanel({
@@ -10,19 +10,11 @@ export default function ControlPanel({
 }) {
     return (
         <section className="control-shell">
-            {/* Mixer Section */}
             <div className="control-card">
                 <div className="card-head">Mixer</div>
                 <div className="control-row">
                     <div className="dial-block">
-                        <Dial
-                            label="VOLUME"
-                            value={volume}
-                            onChange={onVolumeChange}
-                            min={0} max={1} step={0.01}
-                            size={110}
-                            hint={volume.toFixed(2)}
-                        />
+                        <VolumeFader value={volume} onChange={onVolumeChange} label="Mixer" />
                     </div>
 
                     <div className="field-col">
@@ -38,32 +30,23 @@ export default function ControlPanel({
                             <span className="switch-text">{reverbOn ? "ON" : "OFF"}</span>
                         </div>
 
-                        <label className="label" style={{ marginTop: 14 }}>
-                            Filter
-                        </label>
+                        <label className="label" style={{ marginTop: 14 }}>Filter</label>
                         <input
-                            className="range"
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={filterAmt}
-                            onChange={(e) => onFilterChange(parseFloat(e.target.value))}
+                            className="range" type="range" min="0" max="1" step="0.01"
+                            value={filterAmt} onChange={(e) => onFilterChange(parseFloat(e.target.value))}
                         />
                         <div className="hint">{filterAmt.toFixed(2)}</div>
                     </div>
                 </div>
             </div>
 
-            {/* Timing Section */}
             <div className="control-card">
                 <div className="card-head">Timing</div>
                 <div className="control-row">
                     <div className="field-col">
                         <label className="label">Tempo</label>
                         <select
-                            className="select"
-                            value={tempo}
+                            className="select" value={tempo}
                             onChange={(e) => onTempoChange(parseFloat(e.target.value))}
                         >
                             <option value={0.75}>0.75x (Chill)</option>
@@ -77,9 +60,7 @@ export default function ControlPanel({
 
                     <div className="field-col">
                         <label className="label">Actions</label>
-                        <button className="btn" onClick={onProc}>
-                            Preprocess
-                        </button>
+                        <button className="btn" onClick={onProc}>Preprocess</button>
                     </div>
                 </div>
             </div>
