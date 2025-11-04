@@ -1,5 +1,7 @@
+// src/components/ControlPanel.jsx
 import React from "react";
-import VolumeFader from "./VolumeFader.jsx";
+import Dial from "./Dial.jsx";
+import FilterFader from "./FilterFader.jsx";
 import "./ControlPanel.css";
 
 export default function ControlPanel({
@@ -10,57 +12,67 @@ export default function ControlPanel({
 }) {
     return (
         <section className="control-shell">
-            <div className="control-card">
-                <div className="card-head">Mixer</div>
-                <div className="control-row">
-                    <div className="dial-block">
-                        <VolumeFader value={volume} onChange={onVolumeChange} label="Mixer" />
+            <div className="control-card control-panel-grid">
+                <div className="knob-grid">
+                    <div className="knob-col">
+                        <Dial
+                            label="VOLUME"
+                            value={volume}
+                            onChange={onVolumeChange}
+                            min={0} max={1} step={0.01}
+                            size={112}
+                            startAngleDeg={120}
+                            sweepDeg={300}
+                            hint={volume.toFixed(1)}
+                        />
                     </div>
 
-                    <div className="field-col">
-                        <label className="label">Reverb</label>
-                        <div
-                            className="switch"
-                            role="switch"
-                            aria-checked={reverbOn}
-                            tabIndex={0}
+                    <div className="knob-col">
+                        <Dial
+                            label="TEMPO"
+                            value={tempo}
+                            onChange={onTempoChange}
+                            min={0.75} max={2.0} step={0.25}
+                            size={112}
+                            startAngleDeg={120}
+                            sweepDeg={300}
+                            hint={`${Math.round(tempo * 120)} BPM`}
+                        />
+                    </div>
+
+                    <div className="knob-col">
+                        <FilterFader
+                            value={filterAmt}
+                            onChange={onFilterChange}
+                        />
+                    </div>
+
+                    <div className="knob-col">
+                        <div className="knob-title">REVERB</div>
+                        <button
+                            className="btn"
+                            aria-pressed={reverbOn}
                             onClick={() => onReverbChange(!reverbOn)}
                         >
-                            <div className={`thumb ${reverbOn ? "on" : ""}`} />
-                            <span className="switch-text">{reverbOn ? "ON" : "OFF"}</span>
-                        </div>
-
-                        <label className="label" style={{ marginTop: 14 }}>Filter</label>
-                        <input
-                            className="range" type="range" min="0" max="1" step="0.01"
-                            value={filterAmt} onChange={(e) => onFilterChange(parseFloat(e.target.value))}
-                        />
-                        <div className="hint">{filterAmt.toFixed(2)}</div>
+                            {reverbOn ? "ON" : "OFF"}
+                        </button>
+                        <div className="knob-value">{reverbOn ? "Enabled" : "Disabled"}</div>
                     </div>
                 </div>
-            </div>
 
-            <div className="control-card">
-                <div className="card-head">Timing</div>
-                <div className="control-row">
-                    <div className="field-col">
-                        <label className="label">Tempo</label>
-                        <select
-                            className="select" value={tempo}
-                            onChange={(e) => onTempoChange(parseFloat(e.target.value))}
-                        >
-                            <option value={0.75}>0.75x (Chill)</option>
-                            <option value={1.0}>1.00x (Normal)</option>
-                            <option value={1.25}>1.25x (Push)</option>
-                            <option value={1.5}>1.50x (Fast)</option>
-                            <option value={2.0}>2.00x (Hype)</option>
-                        </select>
-                        <div className="hint">{tempo.toFixed(2)}x</div>
-                    </div>
+                <div className="v-divider" />
 
-                    <div className="field-col">
-                        <label className="label">Actions</label>
-                        <button className="btn" onClick={onProc}>Preprocess</button>
+                <div className="preset-col">
+                    <label className="label">PRESET NAME</label>
+                    <select className="select" defaultValue="Pattern 1">
+                        <option>Pattern 1</option>
+                        <option>Pattern 2</option>
+                        <option>Pattern 3</option>
+                    </select>
+
+                    <div className="preset-actions">
+                        <button className="btn ghost" onClick={onProc}>SAVE</button>
+                        <button className="btn" onClick={onProc}>LOAD</button>
                     </div>
                 </div>
             </div>
