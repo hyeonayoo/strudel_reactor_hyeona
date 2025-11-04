@@ -1,5 +1,6 @@
+// src/App.js
 import './App.css';
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StrudelMirror } from '@strudel/codemirror';
 import { evalScope } from '@strudel/core';
 import { drawPianoroll } from '@strudel/draw';
@@ -10,16 +11,20 @@ import { registerSoundfonts } from '@strudel/soundfonts';
 import { stranger_tune } from './tunes';
 import console_monkey_patch from './console-monkey-patch';
 import WavePanel from "./components/WavePanel.jsx";
+import ControlPanel from "./components/ControlPanel.jsx";
 
 let globalEditor = null;
+let currentVolume = 0.8;
+let currentTempo = 1.0;
+let currentReverbOn = false;
+let currentFilter = 0.2;
 
 const handleD3Data = (event) => {
     console.log(event.detail);
 };
 
 export function ProcAndPlay() {
-    if (globalEditor != null && globalEditor.repl.state.started == true) {
-        console.log(globalEditor);
+    if (globalEditor != null && globalEditor.repl.state.started === true) {
         Proc();
         globalEditor.evaluate();
     }
@@ -27,12 +32,19 @@ export function ProcAndPlay() {
 
 export function Proc() {
     let proc_text = document.getElementById('proc').value;
+
+    // token replacements
     let proc_text_replaced = proc_text.replaceAll('<p1_Radio>', ProcessText);
+    proc_text_replaced = proc_text_replaced.replaceAll('<volume>', currentVolume.toFixed(2));
+    proc_text_replaced = proc_text_replaced.replaceAll('<tempo>', currentTempo.toFixed(2));
+    proc_text_replaced = proc_text_replaced.replaceAll('<reverb_on>', currentReverbOn ? 'room 0.3' : '');
+    proc_text_replaced = proc_text_replaced.replaceAll('<filter>', currentFilter.toFixed(2));
+
     ProcessText(proc_text);
     globalEditor.setCode(proc_text_replaced);
 }
 
-export function ProcessText(match, ...args) {
+export function ProcessText(match, ..._args) {
     let replace = "";
     if (document.getElementById('flexRadioDefault2').checked) {
         replace = "_";
@@ -43,19 +55,32 @@ export function ProcessText(match, ...args) {
 export default function StrudelDemo() {
     const hasRun = useRef(false);
 
+    // UI state
+    const [volume, setVolume] = useState(0.8);
+    const [tempo, setTempo] = useState(1.0);
+    const [reverbOn, setReverbOn] = useState(false);
+    const [filterAmt, setFilterAmt] = useState(0.2);
+
+    // state → tokens
+    const handleVolumeChange = (v) => { currentVolume = v; setVolume(v); };
+    const handleTempoChange = (v) => { currentTempo = v; setTempo(v); };
+    const handleReverbChange = (on) => { currentReverbOn = on; setReverbOn(on); };
+    const handleFilterChange = (v) => { currentFilter = v; setFilterAmt(v); };
+
     useEffect(() => {
         if (!hasRun.current) {
             document.addEventListener("d3Data", handleD3Data);
             console_monkey_patch();
             hasRun.current = true;
 
-            //Code copied from example: https://codeberg.org/uzu/strudel/src/branch/main/examples/codemirror-repl
-            //init canvas
+            // init canvas for pianoroll
             const canvas = document.getElementById('roll');
             canvas.width = canvas.width * 2;
             canvas.height = canvas.height * 2;
             const drawContext = canvas.getContext('2d');
-            const drawTime = [-2, 2]; // time window of drawn haps
+            const drawTime = [-2, 2];
+
+            // init Strudel REPL
             globalEditor = new StrudelMirror({
                 defaultOutput: webaudioOutput,
                 getTime: () => getAudioContext().currentTime,
@@ -76,12 +101,13 @@ export default function StrudelDemo() {
                 },
             });
 
+            // initial text
             document.getElementById('proc').value = stranger_tune;
             Proc();
         }
     }, []);
 
-    // 핸들러(버튼에 직접 연결)
+    // transport handlers
     const handlePlay = () => globalEditor?.evaluate();
     const handleStop = () => globalEditor?.stop();
     const handleProc = () => Proc();
@@ -101,10 +127,21 @@ export default function StrudelDemo() {
                                     onPlay={handlePlay}
                                     onStop={handleStop}
                                 />
+                                <ControlPanel
+                                    volume={volume}
+                                    onVolumeChange={handleVolumeChange}
+                                    onProc={handleProc}
+                                    tempo={tempo}
+                                    onTempoChange={handleTempoChange}
+                                    reverbOn={reverbOn}
+                                    onReverbChange={handleReverbChange}
+                                    filterAmt={filterAmt}
+                                    onFilterChange={handleFilterChange}
+                                />
                             </section>
                         </div>
                         <div className="col-md-8" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
-                            <label htmlFor="exampleFormControlTextarea1" className="form-label">Text to preprocess:</label>
+                            <label htmlFor="proc" className="form-label">Text to preprocess:</label>
                             <textarea className="form-control" rows="15" id="proc"></textarea>
                         </div>
                     </div>

@@ -1,38 +1,60 @@
-.App {
-  text-align: center;
+:root {
+    /* brand */
+    --bg-0: #0f0b17;
+    --bg-1: #0f0b17;
+    --panel: #1d1630;
+    --panel-2: #241a3c;
+    --accent: #a46cff; /* purple */
+    --accent-2: #ff844d; /* orange */
+    --muted: #a896d9;
+    --text: #eae4ff;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.02);
+    --glow: 0 0 22px rgba(164,108,255,.55), 0 0 44px rgba(164,108,255,.25);
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* base reset-ish */
+* {
+    box-sizing: border-box
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+html, body, #root {
+    height: 100%
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    background: radial-gradient(60% 80% at 50% 0%, #1a1430 0%, #0f0b17 60%);
+    color: var(--text);
 }
 
-.App-link {
-  color: #61dafb;
+/* app surface */
+.app-shell {
+    max-width: 1080px;
+    margin: 40px auto;
+    padding: 16px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.surface {
+    background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid #2a1e3d;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+}
+
+/* section gap */
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 18px
+}
+
+/* subtle label */
+.label {
+    color: var(--muted);
+    font-size: .9rem;
+    letter-spacing: .06em
 }
