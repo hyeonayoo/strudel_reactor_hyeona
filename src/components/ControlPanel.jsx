@@ -43,18 +43,22 @@ export default function ControlPanel({
                             <div className="col col-fixed d-flex justify-content-center">
                                 <div className="dial-wrap">
                                     <div className="knob-col">
-                                        <div className="knob-title">REVERB</div>
-                                        <button
-                                            className="btn"
-                                            aria-pressed={reverbOn}
-                                            onClick={() => onReverbChange(!reverbOn)}
-                                        >
-                                            {reverbOn ? "ON" : "OFF"}
-                                        </button>
+                                        <label htmlFor="reverbSwitch" className="knob-title">REVERB</label>
+                                        <div className="form-check form-switch d-flex justify-content-center">
+                                            <input
+                                                className="form-check-input reverb-switch"
+                                                type="checkbox"
+                                                role="switch"
+                                                id="reverbSwitch"
+                                                checked={reverbOn}
+                                                onChange={(e) => onReverbChange(e.target.checked)}
+                                            />
+                                        </div>
                                         <div className="knob-value">{reverbOn ? "Enabled" : "Disabled"}</div>
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
