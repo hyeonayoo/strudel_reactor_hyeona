@@ -85,3 +85,14 @@
     .btn:active {
         transform: translateY(1px);
     }
+
+
+    .control-shell .col-md-4 {
+        display: flex;
+        justify-content: center;
+    }
+
+  
+    .knob-grid > .container {
+        grid-column: 1 / -1;
+    }   

@@ -14,38 +14,30 @@ export default function ControlPanel({
         <section className="control-shell">
             <div className="control-card control-panel-grid">
                 <div className="knob-grid">
-                    <div className="knob-col">
-                        <Dial
-                            label="VOLUME"
-                            value={volume}
-                            onChange={onVolumeChange}
-                            min={0} max={1} step={0.01}
-                            size={112}
-                            startAngleDeg={120}
-                            sweepDeg={300}
-                            hint={volume.toFixed(1)}
-                        />
+                    {/* Dials row (Bootstrap grid) */}
+                    <div className="container px-3">
+                        <div className="row g-4 align-items-center text-center">
+                            <div className="col-12 col-md-3">
+                                <div className="knob-col">
+                                    <Dial label="VOLUME" value={volume} onChange={onVolumeChange} />
+                                </div>
+                            </div>
+
+                            <div className="col-12 col-md-3">
+                                <div className="knob-col">
+                                    <Dial label="TEMPO" value={tempo} onChange={onTempoChange} />
+                                </div>
+                            </div>
+
+                            <div className="col-12 col-md-3">
+                                <div className="knob-col">
+                                    <FilterFader label="FILTER" value={filterAmt} onChange={onFilterChange} />
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
 
-                    <div className="knob-col">
-                        <Dial
-                            label="TEMPO"
-                            value={tempo}
-                            onChange={onTempoChange}
-                            min={0.75} max={2.0} step={0.25}
-                            size={112}
-                            startAngleDeg={120}
-                            sweepDeg={300}
-                            hint={`${Math.round(tempo * 120)} BPM`}
-                        />
-                    </div>
-
-                    <div className="knob-col">
-                        <FilterFader
-                            value={filterAmt}
-                            onChange={onFilterChange}
-                        />
-                    </div>
 
                     <div className="knob-col">
                         <div className="knob-title">REVERB</div>
