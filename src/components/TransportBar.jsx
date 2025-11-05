@@ -1,13 +1,14 @@
-﻿import React from "react";
+﻿// src/components/TransportBar.jsx
+import React from "react";
 import "./TransportBar.css";
 
 export default function TransportBar({ onProc, onProcPlay, onPlay, onStop }) {
     return (
         <div className="transport">
-            <button className="btn" onClick={onProc}>Preprocess</button>
-            <button className="btn" onClick={onProcPlay}>Proc & Play</button>
-            <button className="btn primary" onClick={onPlay}>▶ Play</button>
-            <button className="btn" onClick={onStop}>■ Stop</button>
+            <button type="button" className="btn" onClick={onProc}>Preprocess</button>
+            <button type="button" className="btn" onClick={onProcPlay}>Proc & Play</button>
+            <button type="button" className="btn primary" onClick={onPlay}>▶ Play</button>
+            <button type="button" className="btn" onClick={onStop}>■ Stop</button>
         </div>
     );
 }
