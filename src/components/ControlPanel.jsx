@@ -1,21 +1,32 @@
-// src/components/ControlPanel.jsx
+﻿// src/components/ControlPanel.jsx
 import React from "react";
 import Dial from "./Dial.jsx";
 import FilterFader from "./FilterFader.jsx";
+import PresetBar from "./PresetBar.jsx";
 import "./ControlPanel.css";
 
 export default function ControlPanel({
-    volume, onVolumeChange, onProc,
+    // knobs
+    volume, onVolumeChange,
     tempo, onTempoChange,
+    filterAmt, onFilterChange,
+    // reverb toggle
     reverbOn, onReverbChange,
-    filterAmt, onFilterChange
+    // presets
+    presetName, presetOptions = [], onPresetChange,
+    // (legacy) save/load triggers – kept for compatibility (unused here)
+    onSave, onLoad,
+    // optional preset items for dropdown [{name, data}]
+    presetItems = []
 }) {
     return (
         <section className="control-shell">
             <div className="control-card control-panel-grid">
+                {/* knobs + toggle */}
                 <div className="knob-grid">
                     <div className="container px-3">
                         <div className="row flex-nowrap gx-3 align-items-center text-center overflow-auto">
+                            {/* volume */}
                             <div className="col col-fixed d-flex justify-content-center">
                                 <div className="dial-wrap">
                                     <div className="knob-col">
@@ -24,6 +35,7 @@ export default function ControlPanel({
                                 </div>
                             </div>
 
+                            {/* tempo */}
                             <div className="col col-fixed d-flex justify-content-center">
                                 <div className="dial-wrap">
                                     <div className="knob-col">
@@ -32,6 +44,7 @@ export default function ControlPanel({
                                 </div>
                             </div>
 
+                            {/* filter */}
                             <div className="col col-fixed d-flex justify-content-center">
                                 <div className="dial-wrap">
                                     <div className="knob-col">
@@ -40,6 +53,7 @@ export default function ControlPanel({
                                 </div>
                             </div>
 
+                            {/* reverb switch */}
                             <div className="col col-fixed d-flex justify-content-center">
                                 <div className="dial-wrap">
                                     <div className="knob-col">
@@ -65,18 +79,32 @@ export default function ControlPanel({
 
                 <div className="v-divider" />
 
+                {/* presets + save/load */}
                 <div className="preset-col">
                     <label htmlFor="presetSelect" className="form-label fw-bold">PRESET NAME</label>
-                    <select id="presetSelect" className="form-select w-auto mb-2" defaultValue="Pattern 1">
-                        <option>Pattern 1</option>
-                        <option>Pattern 2</option>
-                        <option>Pattern 3</option>
+                    <select
+                        id="presetSelect"
+                        className="form-select w-auto mb-2"
+                        value={presetName}
+                        onChange={(e) => onPresetChange?.(e.target.value)}
+                    >
+                        {presetOptions.length === 0
+                            ? <option value="">(No Presets)</option>
+                            : presetOptions.map((name) => <option key={name} value={name}>{name}</option>)
+                        }
                     </select>
 
-                    <div className="d-flex gap-3">
-                        <button type="button" className="btn btn-save" onClick={onProc}>SAVE</button>
-                        <button type="button" className="btn btn-load" onClick={onProc}>LOAD</button>
-                    </div>
+                    <PresetBar
+                        settings={{ volume, tempo, reverbOn, filterAmt, presetName }}
+                        onApply={(data) => {
+                            if (typeof data?.presetName === "string") onPresetChange?.(data.presetName);
+                            if (typeof data?.volume === "number") onVolumeChange?.(data.volume);
+                            if (typeof data?.tempo === "number") onTempoChange?.(data.tempo);
+                            if (typeof data?.reverbOn === "boolean") onReverbChange?.(data.reverbOn);
+                            if (typeof data?.filterAmt === "number") onFilterChange?.(data.filterAmt);
+                        }}
+                        presets={presetItems}
+                    />
                 </div>
 
             </div>
