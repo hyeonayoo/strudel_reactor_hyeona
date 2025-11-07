@@ -6,17 +6,12 @@ import PresetBar from "./PresetBar.jsx";
 import "./ControlPanel.css";
 
 export default function ControlPanel({
-    // knobs
     volume, onVolumeChange,
     tempo, onTempoChange,
     filterAmt, onFilterChange,
-    // reverb toggle
     reverbOn, onReverbChange,
-    // presets
     presetName, presetOptions = [], onPresetChange,
-    // (legacy) save/load triggers – kept for compatibility (unused here)
     onSave, onLoad,
-    // optional preset items for dropdown [{name, data}]
     presetItems = []
 }) {
     return (

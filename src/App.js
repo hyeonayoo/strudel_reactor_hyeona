@@ -21,12 +21,19 @@ let currentFilter = 0.2;
 const BANDS = 48;
 let bandPrev = new Array(BANDS).fill(0);
 
-// --- streaming (time-series) ---
-const MAX_POINTS = 100;   // number of bars shown in time series
-let streamBuf = [];       // ring buffer for streaming values
+// streaming (time-series)
+const MAX_POINTS = 100;
+let streamBuf = [];
+
+// re-evaluate only if already started
+function evalIfStarted() {
+    if (globalEditor && globalEditor.repl?.state?.started === true) {
+        globalEditor.evaluate();
+    }
+}
 
 export function ProcAndPlay() {
-    if (globalEditor && globalEditor.repl.state.started === true) {
+    if (globalEditor && globalEditor.repl?.state?.started === true) {
         Proc();
         globalEditor.evaluate();
     }
@@ -34,16 +41,25 @@ export function ProcAndPlay() {
 
 export function Proc() {
     const proc_text = document.getElementById('proc').value;
+
     let s = proc_text.replaceAll('<p1_Radio>', ProcessText);
     s = s.replaceAll('<volume>', currentVolume.toFixed(2));
     s = s.replaceAll('<tempo>', currentTempo.toFixed(2));
     s = s.replaceAll('<reverb_on>', currentReverbOn ? 'room 0.3' : '');
     s = s.replaceAll('<filter>', currentFilter.toFixed(2));
+
     if (!/all\s*\(\s*x\s*=>\s*x\.log\s*\(\s*\)\s*\)/.test(s)) {
         s += '\nall(x => x.log())';
     }
+
+    const baseCps = (140 / 60 / 4);
+    s += `\nsetcps(${baseCps.toFixed(6)} * ${currentTempo.toFixed(3)})`;
+    s += `\nall(x => x.gain(${currentVolume.toFixed(3)}))`;
+    s += `\nall(x => x.room(${currentReverbOn ? '0.30' : '0'}))`;
+
     globalEditor.setCode(s);
 }
+
 
 export function ProcessText() {
     return document.getElementById('flexRadioDefault2').checked ? "_" : "";
@@ -65,10 +81,34 @@ export default function StrudelDemo() {
     const [presetName, setPresetName] = useState('Pattern 1');
     const fileRef = useRef(null);
 
-    const handleVolumeChange = (v) => { currentVolume = v; setVolume(v); };
-    const handleTempoChange = (v) => { currentTempo = v; setTempo(v); };
-    const handleReverbChange = (on) => { currentReverbOn = on; setReverbOn(on); };
-    const handleFilterChange = (v) => { currentFilter = v; setFilterAmt(v); };
+    // handlers: update global values -> preprocess -> eval if playing
+    const handleVolumeChange = (v) => {
+        currentVolume = v;
+        setVolume(v);
+        Proc();
+        evalIfStarted();
+    };
+
+    const handleTempoChange = (v) => {
+        currentTempo = v;
+        setTempo(v);
+        Proc();
+        evalIfStarted();
+    };
+
+    const handleReverbChange = (on) => {
+        currentReverbOn = on;
+        setReverbOn(on);
+        Proc();
+        evalIfStarted();
+    };
+
+    const handleFilterChange = (v) => {
+        currentFilter = v;
+        setFilterAmt(v);
+        Proc();
+        evalIfStarted();
+    };
 
     const handleSaveSettings = () => {
         const settings = { volume, tempo, reverbOn, filterAmt, presetName };
@@ -92,6 +132,7 @@ export default function StrudelDemo() {
         if (typeof data.filterAmt === 'number') { setFilterAmt(data.filterAmt); currentFilter = data.filterAmt; }
         if (typeof data.presetName === 'string') setPresetName(data.presetName);
         Proc();
+        evalIfStarted();
     };
 
     const handleFileChange = (e) => {
@@ -123,17 +164,14 @@ export default function StrudelDemo() {
             root: document.getElementById('editor'),
             drawTime: [-6, 6],
             onDraw: (haps) => {
-                // --- spectrum accumulation (48 bands) ---
                 const accum = new Array(BANDS).fill(0);
                 let any = false;
 
-                // --- streaming amplitude accumulation ---
                 let ampSum = 0;
                 let evtCount = 0;
 
                 for (const h of (haps || [])) {
                     const p = h?.params || {};
-                    // take default amplitude = 1 when missing
                     let a = p.postgain ?? p.gain ?? p.amp ?? (p.velocity != null ? p.velocity / 127 : 1);
                     if (!Number.isFinite(a)) a = 0;
                     a = Math.max(0, Math.min(1.5, a));
@@ -153,12 +191,10 @@ export default function StrudelDemo() {
                     evtCount++;
                 }
 
-                // spectrum: decay when no events
                 if (!any) {
                     bandPrev = bandPrev.map(v => Math.max(0, v * 0.86));
                     document.dispatchEvent(new CustomEvent("d3Data", { detail: bandPrev.slice() }));
 
-                    // streaming: gentle decay (optional)
                     const last = streamBuf[streamBuf.length - 1] ?? 0;
                     const decayed = Math.max(0, last * 0.9);
                     streamBuf.push(decayed);
@@ -167,7 +203,6 @@ export default function StrudelDemo() {
                     return;
                 }
 
-                // spectrum normalization + smoothing
                 const maxE = Math.max(0.001, Math.max(...accum));
                 const target = accum.map(v => Math.min(1, Math.pow(v / maxE, 0.5)));
                 const next = target.map((t, i) => {
@@ -180,7 +215,6 @@ export default function StrudelDemo() {
                 bandPrev = next;
                 document.dispatchEvent(new CustomEvent("d3Data", { detail: next }));
 
-                // streaming: push one value per frame (average amplitude 0..1)
                 const amp = Math.min(1, (evtCount ? ampSum / evtCount : 0));
                 streamBuf.push(amp);
                 if (streamBuf.length > MAX_POINTS) streamBuf = streamBuf.slice(-MAX_POINTS);
@@ -233,7 +267,7 @@ export default function StrudelDemo() {
                         <div className="wrap">
                             <section className="card wave">
                                 <WavePanel
-                                    data={series}          // time-series bars (new)
+                                    data={series}
                                     onProc={handleProc}
                                     onProcPlay={handleProcPlay}
                                     onPlay={handlePlay}
