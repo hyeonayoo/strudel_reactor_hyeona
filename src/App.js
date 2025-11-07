@@ -1,9 +1,8 @@
-// src/App.js
+ï»¿// src/App.js
 import './App.css';
 import { useEffect, useRef, useState } from "react";
 import { StrudelMirror } from '@strudel/codemirror';
 import { evalScope } from '@strudel/core';
-import { drawPianoroll } from '@strudel/draw';
 import { initAudioOnFirstClick } from '@strudel/webaudio';
 import { transpiler } from '@strudel/transpiler';
 import { getAudioContext, webaudioOutput, registerSynthSounds } from '@strudel/webaudio';
@@ -19,95 +18,207 @@ let currentTempo = 1.0;
 let currentReverbOn = false;
 let currentFilter = 0.2;
 
-const handleD3Data = (event) => {
-    console.log(event.detail);
-};
+const BANDS = 48;
+let bandPrev = new Array(BANDS).fill(0);
+
+// --- streaming (time-series) ---
+const MAX_POINTS = 100;   // number of bars shown in time series
+let streamBuf = [];       // ring buffer for streaming values
 
 export function ProcAndPlay() {
-    if (globalEditor != null && globalEditor.repl.state.started === true) {
+    if (globalEditor && globalEditor.repl.state.started === true) {
         Proc();
         globalEditor.evaluate();
     }
 }
 
 export function Proc() {
-    let proc_text = document.getElementById('proc').value;
-
-    // token replacements
-    let proc_text_replaced = proc_text.replaceAll('<p1_Radio>', ProcessText);
-    proc_text_replaced = proc_text_replaced.replaceAll('<volume>', currentVolume.toFixed(2));
-    proc_text_replaced = proc_text_replaced.replaceAll('<tempo>', currentTempo.toFixed(2));
-    proc_text_replaced = proc_text_replaced.replaceAll('<reverb_on>', currentReverbOn ? 'room 0.3' : '');
-    proc_text_replaced = proc_text_replaced.replaceAll('<filter>', currentFilter.toFixed(2));
-
-    ProcessText(proc_text);
-    globalEditor.setCode(proc_text_replaced);
+    const proc_text = document.getElementById('proc').value;
+    let s = proc_text.replaceAll('<p1_Radio>', ProcessText);
+    s = s.replaceAll('<volume>', currentVolume.toFixed(2));
+    s = s.replaceAll('<tempo>', currentTempo.toFixed(2));
+    s = s.replaceAll('<reverb_on>', currentReverbOn ? 'room 0.3' : '');
+    s = s.replaceAll('<filter>', currentFilter.toFixed(2));
+    if (!/all\s*\(\s*x\s*=>\s*x\.log\s*\(\s*\)\s*\)/.test(s)) {
+        s += '\nall(x => x.log())';
+    }
+    globalEditor.setCode(s);
 }
 
-export function ProcessText(match, ..._args) {
-    let replace = "";
-    if (document.getElementById('flexRadioDefault2').checked) {
-        replace = "_";
-    }
-    return replace;
+export function ProcessText() {
+    return document.getElementById('flexRadioDefault2').checked ? "_" : "";
 }
 
 export default function StrudelDemo() {
     const hasRun = useRef(false);
-
-    // UI state
     const [volume, setVolume] = useState(0.8);
     const [tempo, setTempo] = useState(1.0);
     const [reverbOn, setReverbOn] = useState(false);
     const [filterAmt, setFilterAmt] = useState(0.2);
 
-    // state ¡æ tokens
+    // spectrum (fixed 48 bands)
+    const [bands, setBands] = useState(Array.from({ length: BANDS }, () => 0));
+
+    // streaming (time series)
+    const [series, setSeries] = useState([]);
+
+    const [presetName, setPresetName] = useState('Pattern 1');
+    const fileRef = useRef(null);
+
     const handleVolumeChange = (v) => { currentVolume = v; setVolume(v); };
     const handleTempoChange = (v) => { currentTempo = v; setTempo(v); };
     const handleReverbChange = (on) => { currentReverbOn = on; setReverbOn(on); };
     const handleFilterChange = (v) => { currentFilter = v; setFilterAmt(v); };
 
+    const handleSaveSettings = () => {
+        const settings = { volume, tempo, reverbOn, filterAmt, presetName };
+        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `strudel-settings-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleLoadClick = () => {
+        fileRef.current?.click();
+    };
+
+    const applySettings = (data) => {
+        if (typeof data.volume === 'number') { setVolume(data.volume); currentVolume = data.volume; }
+        if (typeof data.tempo === 'number') { setTempo(data.tempo); currentTempo = data.tempo; }
+        if (typeof data.reverbOn === 'boolean') { setReverbOn(data.reverbOn); currentReverbOn = data.reverbOn; }
+        if (typeof data.filterAmt === 'number') { setFilterAmt(data.filterAmt); currentFilter = data.filterAmt; }
+        if (typeof data.presetName === 'string') setPresetName(data.presetName);
+        Proc();
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const parsed = JSON.parse(event.target.result);
+                applySettings(parsed);
+            } catch {
+                alert("Invalid settings file.");
+            } finally {
+                e.target.value = '';
+            }
+        };
+        reader.readAsText(file);
+    };
+
     useEffect(() => {
-        if (!hasRun.current) {
-            document.addEventListener("d3Data", handleD3Data);
-            console_monkey_patch();
-            hasRun.current = true;
+        if (hasRun.current) return;
+        console_monkey_patch();
+        hasRun.current = true;
 
-            // init canvas for pianoroll
-            const canvas = document.getElementById('roll');
-            canvas.width = canvas.width * 2;
-            canvas.height = canvas.height * 2;
-            const drawContext = canvas.getContext('2d');
-            const drawTime = [-2, 2];
+        globalEditor = new StrudelMirror({
+            defaultOutput: webaudioOutput,
+            getTime: () => getAudioContext().currentTime,
+            transpiler,
+            root: document.getElementById('editor'),
+            drawTime: [-6, 6],
+            onDraw: (haps) => {
+                // --- spectrum accumulation (48 bands) ---
+                const accum = new Array(BANDS).fill(0);
+                let any = false;
 
-            // init Strudel REPL
-            globalEditor = new StrudelMirror({
-                defaultOutput: webaudioOutput,
-                getTime: () => getAudioContext().currentTime,
-                transpiler,
-                root: document.getElementById('editor'),
-                drawTime,
-                onDraw: (haps, time) => drawPianoroll({ haps, time, ctx: drawContext, drawTime, fold: 0 }),
-                prebake: async () => {
-                    initAudioOnFirstClick();
-                    const loadModules = evalScope(
-                        import('@strudel/core'),
-                        import('@strudel/draw'),
-                        import('@strudel/mini'),
-                        import('@strudel/tonal'),
-                        import('@strudel/webaudio'),
-                    );
-                    await Promise.all([loadModules, registerSynthSounds(), registerSoundfonts()]);
-                },
-            });
+                // --- streaming amplitude accumulation ---
+                let ampSum = 0;
+                let evtCount = 0;
 
-            // initial text
-            document.getElementById('proc').value = stranger_tune;
-            Proc();
-        }
+                for (const h of (haps || [])) {
+                    const p = h?.params || {};
+                    // take default amplitude = 1 when missing
+                    let a = p.postgain ?? p.gain ?? p.amp ?? (p.velocity != null ? p.velocity / 127 : 1);
+                    if (!Number.isFinite(a)) a = 0;
+                    a = Math.max(0, Math.min(1.5, a));
+
+                    let midi = p.midinote ?? p.note ?? null;
+                    if (!Number.isFinite(midi)) {
+                        const s = String(p.sample ?? p.s ?? "");
+                        let hash = 0;
+                        for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+                        midi = 36 + (hash % 48);
+                    }
+                    const idx = Math.max(0, Math.min(BANDS - 1, Math.floor((midi - 24) / 2)));
+                    accum[idx] += a * a;
+
+                    any = true;
+                    ampSum += a;
+                    evtCount++;
+                }
+
+                // spectrum: decay when no events
+                if (!any) {
+                    bandPrev = bandPrev.map(v => Math.max(0, v * 0.86));
+                    document.dispatchEvent(new CustomEvent("d3Data", { detail: bandPrev.slice() }));
+
+                    // streaming: gentle decay (optional)
+                    const last = streamBuf[streamBuf.length - 1] ?? 0;
+                    const decayed = Math.max(0, last * 0.9);
+                    streamBuf.push(decayed);
+                    if (streamBuf.length > MAX_POINTS) streamBuf = streamBuf.slice(-MAX_POINTS);
+                    document.dispatchEvent(new CustomEvent("d3Series", { detail: streamBuf.slice() }));
+                    return;
+                }
+
+                // spectrum normalization + smoothing
+                const maxE = Math.max(0.001, Math.max(...accum));
+                const target = accum.map(v => Math.min(1, Math.pow(v / maxE, 0.5)));
+                const next = target.map((t, i) => {
+                    const b = bandPrev[i];
+                    const diff = t - b;
+                    const rise = 0.34;
+                    const fall = 0.09;
+                    return b + (diff > 0 ? diff * rise : diff * fall);
+                });
+                bandPrev = next;
+                document.dispatchEvent(new CustomEvent("d3Data", { detail: next }));
+
+                // streaming: push one value per frame (average amplitude 0..1)
+                const amp = Math.min(1, (evtCount ? ampSum / evtCount : 0));
+                streamBuf.push(amp);
+                if (streamBuf.length > MAX_POINTS) streamBuf = streamBuf.slice(-MAX_POINTS);
+                document.dispatchEvent(new CustomEvent("d3Series", { detail: streamBuf.slice() }));
+            },
+            prebake: async () => {
+                initAudioOnFirstClick();
+                const loadModules = evalScope(
+                    import('@strudel/core'),
+                    import('@strudel/mini'),
+                    import('@strudel/tonal'),
+                    import('@strudel/webaudio'),
+                );
+                await Promise.all([loadModules, registerSynthSounds(), registerSoundfonts()]);
+            },
+        });
+
+        document.getElementById('proc').value = stranger_tune;
+        Proc();
     }, []);
 
-    // transport handlers
+    useEffect(() => {
+        const listener = (e) => {
+            const d = e.detail;
+            if (Array.isArray(d)) setBands(d.slice(0, BANDS));
+        };
+        const seriesListener = (e) => {
+            const d = e.detail;
+            if (Array.isArray(d)) setSeries(d);
+        };
+        document.addEventListener("d3Data", listener);
+        document.addEventListener("d3Series", seriesListener);
+        return () => {
+            document.removeEventListener("d3Data", listener);
+            document.removeEventListener("d3Series", seriesListener);
+        };
+    }, []);
+
     const handlePlay = () => globalEditor?.evaluate();
     const handleStop = () => globalEditor?.stop();
     const handleProc = () => Proc();
@@ -122,6 +233,7 @@ export default function StrudelDemo() {
                         <div className="wrap">
                             <section className="card wave">
                                 <WavePanel
+                                    data={series}          // time-series bars (new)
                                     onProc={handleProc}
                                     onProcPlay={handleProcPlay}
                                     onPlay={handlePlay}
@@ -130,13 +242,29 @@ export default function StrudelDemo() {
                                 <ControlPanel
                                     volume={volume}
                                     onVolumeChange={handleVolumeChange}
-                                    onProc={handleProc}
                                     tempo={tempo}
                                     onTempoChange={handleTempoChange}
                                     reverbOn={reverbOn}
                                     onReverbChange={handleReverbChange}
                                     filterAmt={filterAmt}
                                     onFilterChange={handleFilterChange}
+                                    presetName={presetName}
+                                    presetOptions={['Pattern 1', 'Pattern 2', 'Pattern 3']}
+                                    onPresetChange={setPresetName}
+                                    onSave={handleSaveSettings}
+                                    onLoad={handleLoadClick}
+                                    presetItems={[
+                                        { name: 'Pattern 1', data: { volume: 0.8, tempo: 1.0, reverbOn: false, filterAmt: 0.3, presetName: 'Pattern 1' } },
+                                        { name: 'Pattern 2', data: { volume: 0.6, tempo: 1.2, reverbOn: true, filterAmt: 0.5, presetName: 'Pattern 2' } },
+                                        { name: 'Pattern 3', data: { volume: 1.0, tempo: 0.9, reverbOn: false, filterAmt: 0.2, presetName: 'Pattern 3' } },
+                                    ]}
+                                />
+                                <input
+                                    ref={fileRef}
+                                    type="file"
+                                    accept="application/json"
+                                    onChange={handleFileChange}
+                                    style={{ display: 'none' }}
                                 />
                             </section>
                         </div>
@@ -153,20 +281,15 @@ export default function StrudelDemo() {
                         <div className="col-md-4">
                             <div className="form-check">
                                 <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1" onChange={ProcAndPlay} defaultChecked />
-                                <label className="form-check-label" htmlFor="flexRadioDefault1">
-                                    p1: ON
-                                </label>
+                                <label className="form-check-label" htmlFor="flexRadioDefault1">p1: ON</label>
                             </div>
                             <div className="form-check">
                                 <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" onChange={ProcAndPlay} />
-                                <label className="form-check-label" htmlFor="flexRadioDefault2">
-                                    p1: HUSH
-                                </label>
+                                <label className="form-check-label" htmlFor="flexRadioDefault2">p1: HUSH</label>
                             </div>
                         </div>
                     </div>
                 </div>
-                <canvas id="roll"></canvas>
             </main>
         </div>
     );
