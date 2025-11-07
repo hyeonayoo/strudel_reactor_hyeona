@@ -1,71 +1,85 @@
-# Getting Started with Create React App
+﻿# Strudel Reactor – Part A Submission
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Project Overview
+This project is a **React-based preprocessor and user interface** for the Strudel live-coding music environment.  
+It allows users to control playback parameters such as volume, tempo, reverb, and filter through an interactive UI, and visualizes real-time Strudel `.log()` data with a D3 graph.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Implemented Controls
+- **Volume Dial (Dial)** → Adjusts overall master output volume  
+- **Tempo Dial (Dial)** → Changes playback speed (CPS ratio)  
+- **Reverb Toggle (Switch)** → Turns the reverb effect on or off  
+- **Filter Fader (Vertical Slider)** → Controls the low-pass filter amount  
+- **Preset Buttons (Buttons in `PresetBar`)** → Save and load control states as JSON  
+---
 
-### `npm start`
+## React Structure
+The application follows a modular React architecture with centralized state management in `App.js`.  
+Heavy logic such as preprocessing, D3 data computation, and JSON I/O are separated into **dedicated hooks and utility modules** for clarity and maintainability.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```plaintext
+App.js
+├── WavePanel.jsx
+│   ├── D3Graph.jsx
+│   └── TransportBar.jsx
+├── ControlPanel.jsx
+│   ├── Dial.jsx
+│   ├── FilterFader.jsx
+│   └── PresetBar.jsx
+├── hooks/useD3Series.js
+└── strudel/
+    ├── preprocess.js         ← buildStrudelCode()
+    └── stream-frame.js       ← computeBandsAndSeries()
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+────────────────────────────────────────────
+Component Roles
+────────────────────────────────────────────
+App.js
+• Root component and global state manager (`volume`, `tempo`, `reverbOn`, `filterAmt`).  
+• Manages StrudelMirror REPL instance and evaluation flow.  
+• Uses `Proc()` and `ProcAndPlay()` to preprocess and re-evaluate code.  
+• Handles data broadcasting from onDraw via custom events (`d3Data`, `d3Series`).
 
-### `npm test`
+WavePanel.jsx
+• Groups visual/audio feedback components.  
+• Contains D3Graph (waveform visualization) and TransportBar (playback controls).
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+D3Graph.jsx
+• Renders real-time amplitude data as an animated D3.js bar graph.  
+• Smooth transitions (60 ms) visualize live dynamic sound intensity.
 
-### `npm run build`
+TransportBar.jsx
+• Provides playback and processing buttons: Preprocess, Proc & Play, Play, and Stop.  
+• Directly triggers App-level handlers via props.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+ControlPanel.jsx
+• Hosts user controls: volume/tempo dials, filter fader, reverb toggle, and preset bar.  
+• Sends all state changes upward to App via props for one-way data flow.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+PresetBar.jsx
+• Manages JSON-based preset saving/loading.  
+• Allows importing/exporting control states through local files.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+hooks/useD3Series.js
+• Encapsulates event listeners for `d3Data` and `d3Series`.  
+• Returns live-updating `bands` and `series` state to App.
 
-### `npm run eject`
+strudel/preprocess.js (`buildStrudelCode`)
+• Generates Strudel code by replacing placeholders (`<volume>`, `<tempo>`, `<filter>`, etc.).  
+• Injects `.log()`, `setcps`, `gain`, and `room` statements for preprocessing.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+strudel/stream-frame.js (`computeBandsAndSeries`)
+• Calculates 48 frequency bands and amplitude series from `haps`.  
+• Smooths transitions and clamps dynamic range to create stable data for D3Graph.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+────────────────────────────────────────────
+Data Flow
+────────────────────────────────────────────
+1. User interacts with ControlPanel → updates React state in App.  
+2. App calls `Proc()` → uses `buildStrudelCode()` to generate new Strudel code.  
+3. If playing, `evalIfStarted()` re-evaluates code immediately.  
+4. Strudel’s `onDraw(haps)` emits live data → `computeBandsAndSeries()` processes it.  
+5. Processed arrays are dispatched as events → `useD3Series()` receives updates → D3Graph renders live visual feedback.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-# Test commit by Hyeona
+→ This structure keeps UI, audio logic, and visualization layers fully decoupled yet synchronized.
