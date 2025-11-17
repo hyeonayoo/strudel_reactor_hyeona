@@ -1,24 +1,25 @@
-/* src/components/TransportBar.css */
-.transport {
+.transport-bar {
     display: flex;
-    gap: 12px;
     flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
 }
 
-.btn {
-    background: #2d2141;
-    border: 1px solid #2a1e3d;
-    color: #e8e2ff;
-    padding: 10px 16px;
-    border-radius: 10px;
-    cursor: pointer;
+.btn-transport {
+    color: #a855f7 !important;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 0.35rem 0.85rem;
 }
 
-    .btn.primary {
-        border-color: #a46cff;
-        box-shadow: 0 0 14px rgba(164,108,255,.55);
-    }
+.btn-transport:hover {
+    color: #c084fc !important;
+}
 
-    .btn.ghost {
-        background: transparent;
-    }
+.btn-transport:active {
+    color: #9333ea !important;
+}
+
+.btn-transport.primary {
+    color: #a855f7 !important;
+}
