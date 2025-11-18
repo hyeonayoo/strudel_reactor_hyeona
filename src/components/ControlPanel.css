@@ -1,24 +1,35 @@
-/* src/components/ControlPanel.css */
-:root {
-    --purple-main: #8A2BE2;
-    --purple-light: #B266FF;
-    --purple-bg: #1B112B;
-    --purple-card: #26183D;
-    --purple-text: #CBBBEF;
-    --purple-glow: rgba(178,102,255,0.8);
-    --muted: var(--purple-text);
-    --text: var(--purple-text);
+.control-shell {
+    width: 60%;
+    margin: 10px auto;
 }
 
 .control-panel-grid {
     display: grid;
-    grid-template-columns: 1fr 2px 0.9fr;
-    align-items: start;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: flex-start;
     gap: 20px;
+}
+
+.control-row {
+    display: flex;
+    width: 100%;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.control-slot {
+    flex: 1 1 0;
+    display: flex;
+    justify-content: center;
+}
+
+.preset-slot {
+    justify-content: flex-start;
 }
 
 .knob-grid {
     display: block;
+    width: 100%;
 }
 
 .knob-col {
@@ -29,73 +40,46 @@
 
 .knob-title {
     color: var(--muted);
-    font-size: .85rem;
-    letter-spacing: .06em;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
     text-align: center;
     margin-bottom: 8px;
+    text-transform: uppercase;
 }
 
 .knob-value {
     color: var(--muted);
-    font-size: .9rem;
+    font-size: 0.9rem;
     text-align: center;
     margin-top: 6px;
 }
 
 .v-divider {
     width: 2px;
-    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
     border-radius: 2px;
 }
 
 .preset-col {
     display: flex;
     flex-direction: column;
+    justify-content: flex-start;
     align-items: flex-start;
-    gap: 10px;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+    padding-left: 1rem;
 }
 
-.label {
+.control-shell label,
+.control-shell .form-check-label,
+.control-shell .knob-title,
+.control-shell .knob-value,
+.control-shell select,
+.control-shell option {
     color: var(--muted);
-    font-size: .85rem;
-    letter-spacing: .06em;
-}
-
-.select {
-    background: #2d2141;
-    border: 1px solid #2a1e3d;
-    color: var(--text);
-    padding: 8px 10px;
-    border-radius: 8px;
-    width: 140px;
-}
-
-.preset-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 2px;
-}
-
-.control-shell .btn {
-    background: transparent;
-    background-color: #B266FF;
-    border: 1px solid var(--purple-main);
-    color: var(--purple-text);
-    padding: 10px 18px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: 0.2s ease-in-out;
-    font-weight: 600;
+    font-family: inherit;
+    font-size: 0.9rem;
     letter-spacing: 0.03em;
-    box-shadow: 0 0 8px rgba(138,43,226,0.4);
-}
-
-.control-shell .btn.ghost {
-    background: transparent;
-}
-
-.control-shell .btn:active {
-    transform: translateY(1px);
 }
 
 .control-shell .row {
@@ -103,18 +87,19 @@
     --bs-gutter-y: 0.75rem;
 }
 
-.control-shell .row.flex-nowrap {
-    overflow-x: auto;
-}
+    .control-shell .row.flex-nowrap {
+        overflow-x: visible;
+    }
 
 .control-shell .col {
     display: flex;
     justify-content: center;
+    flex: 1 1 0;
 }
 
 .col-fixed {
-    flex: 0 0 auto;
-    width: 220px;
+    flex: 1 1 0;
+    width: auto;
 }
 
 .dial-wrap {
@@ -122,54 +107,57 @@
     width: 100%;
 }
 
-@media (max-width: 576px) {
-    .col-fixed {
-        width: 200px;
+@media (max-width: 1400px) {
+
+    .control-row {
+        flex-wrap: wrap;
+        row-gap: 32px;
+        justify-content: center;
+    }
+
+    .control-slot {
+        flex: 0 0 33.333%;
+        max-width: 33.333%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .preset-slot {
+        flex: 0 0 33.333%;
+        max-width: 33.333%;
+        justify-content: center;
+    }
 }
 
-.dial-wrap {
-    max-width: 200px;
-}
-}
 
-.btn-save, .btn-load {
-    border: 1px solid #8a2be2;
-    color: #e0c8ff;
-    background: radial-gradient(circle at 30% 30%, rgba(138,43,226,0.35), rgba(50,0,90,0.4));
-    background-color: #8a2be2; 
-    box-shadow: 0 0 8px rgba(138,43,226,0.5);
-    transition: all 0.2s ease;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-}
-
-.btn-save:hover, .btn-load:hover {
-    color: #fff;
-    border-color: #b266ff;
-    box-shadow: 0 0 15px rgba(178,102,255,0.8), 0 0 25px rgba(138,43,226,0.4);
-}
-
-.btn-save:active, .btn-load:active {
-    transform: translateY(1px);
-    box-shadow: 0 0 4px rgba(138,43,226,0.6);
-}
 
 .reverb-switch {
     width: 3rem;
     height: 1.6rem;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.06);
     border-color: #3a2b56;
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
     cursor: pointer;
 }
 
 .form-check-input.reverb-switch:checked {
-    background-color: var(--purple-main);
-    border-color: var(--purple-light);
-    box-shadow: 0 0 12px var(--purple-glow), 0 0 20px rgba(138,43,226,0.4);
+    background-color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(164, 108, 255, 0.8), 0 0 20px rgba(36, 26, 60, 0.9);
 }
 
-
 .reverb-switch:focus {
-    box-shadow: 0 0 0 0.2rem rgba(138,43,226,0.25);
+    box-shadow: 0 0 0 0.2rem rgba(164, 108, 255, 0.35);
+}
+
+.knob-col .form-check {
+    margin-bottom: 4px;
+}
+
+.knob-col .form-check-label {
+    font-size: 0.9rem;
+}
+
+.knob-col .knob-title + .d-flex {
+    margin-top: 6px;
 }

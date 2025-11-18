@@ -9,7 +9,7 @@ export default function WavePanel({ data, onProc, onProcPlay, onPlay, onStop }) 
         <section className="wave-shell">
             <div className="wave-card">
                 <header className="wave-header">
-                    <h2 className="wave-title">OUTPUT</h2>
+                    <h2 className="wave-title">sTRUDEL</h2>
                     <TransportBar
                         onProc={onProc}
                         onProcPlay={onProcPlay}

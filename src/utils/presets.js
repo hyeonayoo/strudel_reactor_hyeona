@@ -39,10 +39,25 @@ const asBool = (v) => (typeof v === "boolean" ? v : String(v).toLowerCase() === 
 // ensure shape & ranges
 function sanitizeSettings(obj = {}) {
     const volume = Number.isFinite(obj.volume) ? clamp01(obj.volume) : 0.8;
-    const tempo = Number.isFinite(obj.tempo) ? obj.tempo : 1.0;        // allow >1
+    const tempo = Number.isFinite(obj.tempo) ? obj.tempo : 1.0;
     const reverbOn = asBool(obj.reverbOn ?? false);
     const filterAmt = Number.isFinite(obj.filterAmt) ? clamp01(obj.filterAmt) : 0.2;
     const presetName = typeof obj.presetName === "string" ? obj.presetName : "";
 
-    return { volume, tempo, reverbOn, filterAmt, presetName };
+    const bassOn = asBool(obj.bassOn ?? true);
+    const arpOn = asBool(obj.arpOn ?? true);
+    const drumsOn = asBool(obj.drumsOn ?? true);
+    const drums2On = asBool(obj.drums2On ?? true);
+
+    return {
+        volume,
+        tempo,
+        reverbOn,
+        filterAmt,
+        presetName,
+        bassOn,
+        arpOn,
+        drumsOn,
+        drums2On
+    };
 }

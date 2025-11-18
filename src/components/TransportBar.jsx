@@ -11,7 +11,7 @@ export default function TransportBar({ onProc, onProcPlay, onPlay, onStop }) {
             <button type="button" className="btn btn-transport" onClick={onProcPlay}>
                 Proc &amp; Play
             </button>
-            <button type="button" className="btn btn-transport primary" onClick={onPlay}>
+            <button type="button" className="btn btn-transport" onClick={onPlay}>
                 ▶ Play
             </button>
             <button type="button" className="btn btn-transport" onClick={onStop}>

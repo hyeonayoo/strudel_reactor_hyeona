@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { downloadSettings, normalizeSettings, readFileAsText } from '../utils/presets.js';
+import './PresetBar.css';
 
 export default function PresetBar({ settings, onApply, presets = [] }) {
     const fileRef = useRef(null);
@@ -28,30 +29,32 @@ export default function PresetBar({ settings, onApply, presets = [] }) {
     const applyPreset = (p) => onApply(normalizeSettings(p.data));
 
     return (
-        <div className="d-flex align-items-center gap-2 flex-wrap">
-            <div className="btn-group" role="group" aria-label="Presets">
-                <button type="button" className="btn btn-outline-primary" onClick={handleSave}>
-                    Save
-                </button>
-                <button type="button" className="btn btn-primary" onClick={handleLoadClick}>
-                    Load
-                </button>
-            </div>
-
+        <div className="preset-shell">
             {presets.length > 0 && (
                 <div className="dropdown">
-                    <button className="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    <button className="dropdown-toggle" data-bs-toggle="dropdown">
                         Presets
                     </button>
                     <ul className="dropdown-menu">
                         {presets.map((p, i) => (
                             <li key={i}>
-                                <button className="dropdown-item" onClick={() => applyPreset(p)}>{p.name}</button>
+                                <button className="dropdown-item" onClick={() => applyPreset(p)}>
+                                    {p.name}
+                                </button>
                             </li>
                         ))}
                     </ul>
                 </div>
             )}
+
+            <div className="btn-group" role="group" aria-label="Presets">
+                <button type="button" className="preset-btn" onClick={handleSave}>
+                    Save
+                </button>
+                <button type="button" className="preset-btn" onClick={handleLoadClick}>
+                    Load
+                </button>
+            </div>
 
             <input
                 ref={fileRef}
