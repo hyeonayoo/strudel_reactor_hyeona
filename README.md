@@ -1,85 +1,142 @@
-﻿# Strudel Reactor – Part A Submission
+﻿# Strudel Reactor – Part B Submission
 
-## Project Overview
-This project is a **React-based preprocessor and user interface** for the Strudel live-coding music environment.  
-It allows users to control playback parameters such as volume, tempo, reverb, and filter through an interactive UI, and visualizes real-time Strudel `.log()` data with a D3 graph.
+## 1. Project Overview
+Strudel Studio is a React-based preprocessor and control interface for the Strudel live-coding music environment.  
+It adds a modern UI with interactive controls, a live D3.js visualisation, and JSON preset handling.  
+Users can adjust volume, tempo, reverb, and filter amount, while preprocessing injects these values directly into the Strudel code.  
+The project demonstrates modular React design, clean data flow, and dependable preprocessing logic.
+
+## 2. Controls & Features
+
+### • Volume Dial  
+Custom SVG dial that controls the `<volume>` placeholder.
+
+### • Tempo Dial  
+Controls song speed by adjusting the `<tempo>` value.
+
+### • Reverb Switch (Bootstrap)  
+Toggles Strudel’s `.room()` effect on/off.
+
+### • Filter Fader (Vertical Slider)  
+Controls the `<filter>` low-pass amount.
+
+### • PresetBar (Buttons + File Input)  
+Saves/loads all settings as JSON and supports quick preset selection.
+
+## 3. Usage Guidelines & Quirks
+
+### • Preprocess vs Proc & Play
+- **Preprocess:** Updates the REPL output only.  
+- **Proc & Play:** Updates and immediately refreshes the audio.
+
+### • D3 Graph
+Displays real-time amplitude data from Strudel `.log()`; updates ~60 ms.
+
+### • Presets
+- **Save:** Exports settings as JSON.  
+- **Load:** Applies settings instantly (invalid files show an alert).
+
+### • Defaults
+Volume 0.8, Tempo 1.0, Reverb Off, Filter 0.2.
+
+## 4. React Architecture
+
+The project is structured using a clean, modular React component layout.  
+Only essential information is included here to keep the README concise.
+
+### • App.js  
+Holds all global state (volume, tempo, reverbOn, filterAmt) and manages:
+- Strudel REPL instance  
+- Preprocess / Proc & Play logic  
+- Event listeners for real-time graph data
+
+Acts as the single source of truth and passes props to all child components.
+
+### • ControlPanel  
+Contains all user controls:
+- Volume Dial  
+- Tempo Dial  
+- Reverb Switch  
+- Filter Fader  
+- PresetBar  
+
+All changes bubble up to App.js for synchronized state updates.
+
+### • WavePanel  
+Groups the playback and visualization UI:
+- D3Graph (live amplitude graph)  
+- TransportBar (Play, Stop, Preprocess controls)
+
+### • Utility Modules  
+- **preprocess.js:** Builds Strudel code by replacing placeholders.  
+- **stream-frame.js:** Processes `.log()` data into graph-friendly arrays.  
+- **useD3Series:** Hook for subscribing to live Strudel data events.
+
+
+## 5. Song Attribution
+
+The main song used in this project is the `stranger_tune` pattern included in the starter code.  
+This pattern is **remixed and reproduced from Algorave Dave’s Strudel/Tidal live-coding example**:
+
+- Algorave Dave – Live Coding Example  
+  https://www.youtube.com/watch?v=ZCcpWzhekEY  
+
+For this assignment, I kept the core structure (basslines, arpeggiators, drum patterns) and adapted it to work with my preprocessing logic and UI controls (volume, tempo, reverb, filter and presets).
+
+
+## 6. Demo Video
+🔗 *https://drive.google.com/file/d/1GxnmYUwE5Ilch61wu3nT3vAyRJOCsZAC/view?usp=sharing*
+
+## 7. AI Usage Documentation
+
+I used ChatGPT to assist with three specific parts of the project.  
+Below are the areas where AI-generated ideas were incorporated, without code.  
+(I will insert the original AI code snippets later.)
 
 ---
 
-## Implemented Controls
-- **Volume Dial (Dial)** → Adjusts overall master output volume  
-- **Tempo Dial (Dial)** → Changes playback speed (CPS ratio)  
-- **Reverb Toggle (Switch)** → Turns the reverb effect on or off  
-- **Filter Fader (Vertical Slider)** → Controls the low-pass filter amount  
-- **Preset Buttons (Buttons in `PresetBar`)** → Save and load control states as JSON  
+### 1) JSON Save & Load (Preset System)
+
+**Prompt Example**  
+“How can I save and load settings as JSON in React?”
+
+```
+export function downloadJson(name, obj) {
+  const json = JSON.stringify(obj, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+}
+
+export function readJsonFile(file) {
+  return file.text().then(t => JSON.parse(t));
+}
+```
+
+I used the AI’s suggested approach as the basis for my preset system  
+(`downloadSettings`, `readFileAsText`, and `normalizeSettings`).
+
 ---
 
-## React Structure
-The application follows a modular React architecture with centralized state management in `App.js`.  
-Heavy logic such as preprocessing, D3 data computation, and JSON I/O are separated into **dedicated hooks and utility modules** for clarity and maintainability.
+### 2) Dial Pointer → Angle Mapping (Knob Interaction)
 
-```plaintext
-App.js
-├── WavePanel.jsx
-│   ├── D3Graph.jsx
-│   └── TransportBar.jsx
-├── ControlPanel.jsx
-│   ├── Dial.jsx
-│   ├── FilterFader.jsx
-│   └── PresetBar.jsx
-├── hooks/useD3Series.js
-└── strudel/
-    ├── preprocess.js         ← buildStrudelCode()
-    └── stream-frame.js       ← computeBandsAndSeries()
+**Prompt Example**  
+“Show me a simple way to convert pointer drag into an angle for a dial component.”
 
-────────────────────────────────────────────
-Component Roles
-────────────────────────────────────────────
-App.js
-• Root component and global state manager (`volume`, `tempo`, `reverbOn`, `filterAmt`).  
-• Manages StrudelMirror REPL instance and evaluation flow.  
-• Uses `Proc()` and `ProcAndPlay()` to preprocess and re-evaluate code.  
-• Handles data broadcasting from onDraw via custom events (`d3Data`, `d3Series`).
+```
+function getAngleFromPointer(ref, x, y) {
+  const rect = ref.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const rad = Math.atan2(y - cy, x - cx);
+  return (rad * 180) / Math.PI;  // -180 ~ 180
+}
+```
 
-WavePanel.jsx
-• Groups visual/audio feedback components.  
-• Contains D3Graph (waveform visualization) and TransportBar (playback controls).
+This idea was used as the starting point for the SVG dial logic,  
+which I expanded with sweep limits, clamping, drag events, and arc drawing.
 
-D3Graph.jsx
-• Renders real-time amplitude data as an animated D3.js bar graph.  
-• Smooth transitions (60 ms) visualize live dynamic sound intensity.
-
-TransportBar.jsx
-• Provides playback and processing buttons: Preprocess, Proc & Play, Play, and Stop.  
-• Directly triggers App-level handlers via props.
-
-ControlPanel.jsx
-• Hosts user controls: volume/tempo dials, filter fader, reverb toggle, and preset bar.  
-• Sends all state changes upward to App via props for one-way data flow.
-
-PresetBar.jsx
-• Manages JSON-based preset saving/loading.  
-• Allows importing/exporting control states through local files.
-
-hooks/useD3Series.js
-• Encapsulates event listeners for `d3Data` and `d3Series`.  
-• Returns live-updating `bands` and `series` state to App.
-
-strudel/preprocess.js (`buildStrudelCode`)
-• Generates Strudel code by replacing placeholders (`<volume>`, `<tempo>`, `<filter>`, etc.).  
-• Injects `.log()`, `setcps`, `gain`, and `room` statements for preprocessing.
-
-strudel/stream-frame.js (`computeBandsAndSeries`)
-• Calculates 48 frequency bands and amplitude series from `haps`.  
-• Smooths transitions and clamps dynamic range to create stable data for D3Graph.
-
-────────────────────────────────────────────
-Data Flow
-────────────────────────────────────────────
-1. User interacts with ControlPanel → updates React state in App.  
-2. App calls `Proc()` → uses `buildStrudelCode()` to generate new Strudel code.  
-3. If playing, `evalIfStarted()` re-evaluates code immediately.  
-4. Strudel’s `onDraw(haps)` emits live data → `computeBandsAndSeries()` processes it.  
-5. Processed arrays are dispatched as events → `useD3Series()` receives updates → D3Graph renders live visual feedback.
-
-→ This structure keeps UI, audio logic, and visualization layers fully decoupled yet synchronized.
