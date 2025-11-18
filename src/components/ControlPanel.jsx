@@ -15,7 +15,8 @@ export default function ControlPanel({
     bassOn, onBassChange,
     arpOn, onArpChange,
     drumsOn, onDrumsChange,
-    drums2On, onDrums2Change
+    drums2On, onDrums2Change,
+    onPresetApply,
 }) {
     return (
         <section className="control-shell">
@@ -136,17 +137,7 @@ export default function ControlPanel({
                             drumsOn,
                             drums2On
                         }}
-                        onApply={(data) => {
-                            if (typeof data?.presetName === "string") onPresetChange?.(data.presetName);
-                            if (typeof data?.volume === "number") onVolumeChange?.(data.volume);
-                            if (typeof data?.tempo === "number") onTempoChange?.(data.tempo);
-                            if (typeof data?.reverbOn === "boolean") onReverbChange?.(data.reverbOn);
-                            if (typeof data?.filterAmt === "number") onFilterChange?.(data.filterAmt);
-                            if (typeof data?.bassOn === "boolean") onBassChange?.(data.bassOn);
-                            if (typeof data?.arpOn === "boolean") onArpChange?.(data.arpOn);
-                            if (typeof data?.drumsOn === "boolean") onDrumsChange?.(data.drumsOn);
-                            if (typeof data?.drums2On === "boolean") onDrums2Change?.(data.drums2On);
-                        }}
+                        onApply={onPresetApply}
                         presets={presetItems}
                     />
                 </div>
